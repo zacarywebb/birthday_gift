@@ -22,14 +22,12 @@ useEffect(() => {
     requestAnimationFrame(() => {
       const duhBtn = document.getElementById('duh-btn');
       const container = document.getElementById('bg-container');
-      if (duhBtn && container) {
-        const rect = duhBtn.getBoundingClientRect();
-        const parentRect = container.getBoundingClientRect();
-        setNoPos({
-          top: rect.top - parentRect.top,
-          left: rect.left - parentRect.left + rect.width + 15
-        });
-      }
+      const rect = duhBtn.getBoundingClientRect();
+      const parentRect = container.getBoundingClientRect();
+      setNoPos({
+        top: rect.top -parentRect.top + 111,
+        left: rect.left - parentRect.left + rect.width + 15
+      });
     });
   };
 
