@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Optional custom styles if needed */
+
+@layer base {
+  :root {
+    font-family: 'Baloo 2', cursive, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  }
+}
+
+@layer components {
+  .pixel-bg {
+    background-image: url('/images/landingBackground.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    image-rendering: pixelated;
+  }
+}
