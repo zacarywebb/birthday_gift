@@ -10,17 +10,12 @@ import {
 
 function shuffleArray(array) {
   const arr = [...array];
-  for (let i = arr.length - 1; i > 1; i--) {
-    const j = Math.floor(Math.random() * (i - 1)) + 1;
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1)); 
     [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  const indexOfZero = arr.indexOf(0);
-  if (indexOfZero !== 0) {
-    [arr[0], arr[indexOfZero]] = [arr[indexOfZero], arr[0]];
   }
   return arr;
 }
-
 export default function FloatingSongs() {
   const allSongs = [...songs, ...sideSongs];
 
