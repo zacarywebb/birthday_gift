@@ -46,18 +46,26 @@ useEffect(() => {
 
   const handleSpriteClick = (charliClick, gifClick=false) => {
     if (charliClick) {
-      setCharliToast(true);
+      setCharliToast(true)
+      setGifToast(false);
+      setShowToast(false);
       setTimeout(() => setCharliToast(false), 5000);
       return;
     }
-    if (gifClick) {
+    else if (gifClick) {
       setGifToast(true);
+      setCharliToast(false);
+      setShowToast(false);
       setTimeout(() => setGifToast(false), 3500);
       return;
     }
-    // Show toast message when any sprite is clicked
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 3500);
+    else {
+      // Show toast message when any sprite is clicked
+      setShowToast(true);
+      setCharliToast(false);
+      setGifToast(false);
+      setTimeout(() => setShowToast(false), 3500);
+    }
   };
 
   const navigate = useNavigate();
