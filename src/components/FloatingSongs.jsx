@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import gsap from "gsap";
+import { useNavigate } from 'react-router-dom'
 import {
   songs,
   sideSongs,
@@ -82,6 +83,10 @@ export default function FloatingSongs() {
       setCurrentSongIndex((i) => i + 1);
     }
   };
+  const navigate = useNavigate();
+  const handleGoHome = () => {
+    navigate("/");
+  };
 
   const currentSong = allSongs[shuffledArrayIndices[currentSongIndex]];
 
@@ -144,7 +149,7 @@ export default function FloatingSongs() {
               position: "absolute",
               width: "100px",
               height: "100px",
-              bottom: "-10%",
+              bottom: "-2%",
               left: `${1 + idx * 5.5}%`,
               zIndex: 0,
               opacity: 0.38,
@@ -215,6 +220,17 @@ export default function FloatingSongs() {
           onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.25)")}
           onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
         />
+        <div className="nav-buttons">
+          <button 
+          className="cute-button" 
+          onClick={handleGoHome}
+          style = {{
+            position: "fixed",
+            bottom: "20px",
+            right: "20px",
+            zIndex: 9999,
+          }}>Home</button>
+        </div>
       </div>
     </>
   );

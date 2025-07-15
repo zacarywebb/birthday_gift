@@ -1,8 +1,7 @@
-import React, { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState } from "react";
 import { letters } from "./constants/letters.js";
 import { gsap } from "gsap";
 import FloatingSongs from "./components/FloatingSongs.jsx";
-
 export default function Letters() {
   const [currentLetterIndex, setCurrentLetterIndex] = useState(0);
   const containerRef = useRef(null);
@@ -30,6 +29,8 @@ export default function Letters() {
       prev > 0 ? prev - 1 : letters.length - 1
     );
   };
+
+
 
   return (
     <>

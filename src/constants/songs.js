@@ -182,7 +182,7 @@ export const leftSideSongs = [
   { id: 4, title: "Beyond", artist: "Leon Bridges" },
   { id: 5, title: "Make You Feel My Love", artist: "Adele" },
   { id: 6, title: "Your Song", artist: "Elton John" },
-  { id: 7, title: "Can't Help Falling in Love", artist: "Elvis Presley" },
+  { id: 7, title: "Sailor Song", artist: "Gigi Perez" },
   { id: 8, title: "I Will Always Love You", artist: "Whitney Houston" },
   { id: 9, title: "Somewhere Only We Know", artist: "Keane" },
 
