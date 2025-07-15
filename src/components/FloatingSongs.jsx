@@ -226,7 +226,7 @@ export default function FloatingSongs() {
           onClick={handleGoHome}
           style = {{
             position: "fixed",
-            bottom: "20px",
+            bottom: "0px",
             right: "20px",
             zIndex: 9999,
           }}>Home</button>
