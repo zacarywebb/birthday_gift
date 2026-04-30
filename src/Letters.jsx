@@ -2,186 +2,199 @@ import { useRef, useEffect, useState } from "react";
 import { letters } from "./constants/letters.js";
 import { gsap } from "gsap";
 import FloatingSongs from "./components/FloatingSongs.jsx";
-export default function Letters() {
-  const [currentLetterIndex, setCurrentLetterIndex] = useState(0);
-  const containerRef = useRef(null);
 
+export default function Letters() {
+  const [idx, setIdx]       = useState(0);
+  const containerRef         = useRef(null);
+  const letterBodyRef        = useRef(null);
+
+  // Entrance animation
   useEffect(() => {
     const ctx = gsap.context(() => {
-      gsap.fromTo(
-        ".letters-container",
-        { opacity: 0, y: 60 },
-        { opacity: 1, y: 0, duration: 1.2, ease: "power3.out" }
+      gsap.fromTo('.letter-card',
+        { opacity: 0, y: 55 },
+        { opacity: 1, y: 0, duration: 1.1, ease: 'power3.out' }
       );
     }, containerRef);
-
     return () => ctx.revert();
   }, []);
 
-  const handleNextLetter = () => {
-    setCurrentLetterIndex((prev) =>
-      prev < letters.length - 1 ? prev + 1 : 0
-    );
+  const goTo = (newIdx) => {
+    const el = letterBodyRef.current;
+    if (!el) { setIdx(newIdx); return; }
+    gsap.to(el, {
+      opacity: 0, y: -14, duration: 0.28, ease: 'power2.in',
+      onComplete: () => {
+        setIdx(newIdx);
+        gsap.fromTo(el,
+          { opacity: 0, y: 18 },
+          { opacity: 1, y: 0, duration: 0.38, ease: 'power2.out' }
+        );
+      },
+    });
   };
 
-  const handlePrevLetter = () => {
-    setCurrentLetterIndex((prev) =>
-      prev > 0 ? prev - 1 : letters.length - 1
-    );
-  };
-
-
+  const prev = () => goTo(idx > 0 ? idx - 1 : letters.length - 1);
+  const next = () => goTo(idx < letters.length - 1 ? idx + 1 : 0);
 
   return (
-    <>
+    <div ref={containerRef} style={{ position: 'relative', minHeight: '100vh', fontFamily: "'Baloo 2', cursive" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Shadows+Into+Light&display=swap');
-        @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700&display=swap');
 
-        .letters-bg {
-          position: fixed;
-          width: 100vw;
-          height: 100vh;
-          top: 0;
-          left: 0;
+        .letters-pixel-bg {
+          position: fixed; inset: 0;
           background-image: url('/images/lettersBackground.png');
-          background-size: cover;
-          background-position: center;
-          background-repeat: no-repeat;
-          image-rendering: pixelated;
-          z-index: -2;
+          background-size: cover; background-position: center;
+          image-rendering: pixelated; z-index: -1;
+        }
+        .letters-pixel-bg::after {
+          content: '';
+          position: absolute; inset: 0;
+          background: rgba(30, 10, 20, 0.18);
         }
 
-        .letters-wrapper {
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          min-height: 100vh;
-          padding: 20px;
-          gap: 40px;
-          flex-wrap: wrap;
+        .letters-page {
+          display: flex; justify-content: center; align-items: center;
+          min-height: 100vh; padding: 80px 20px 140px;
         }
 
-        .gif-column {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 10px;
+        /* Card */
+        .letter-card {
+          max-width: min(700px, 92vw); width: 100%;
+          background: rgba(255, 251, 245, 0.92);
+          backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+          border: 1px solid rgba(212, 168, 83, 0.32);
+          border-radius: 8px;
+          box-shadow:
+            0 16px 56px rgba(0, 0, 0, 0.22),
+            0 2px  8px  rgba(0, 0, 0, 0.08),
+            inset 0 1px 0 rgba(255,255,255,0.9);
+          overflow: hidden;
         }
 
-        .dancing-gif {
-          width: 250px;
-          max-width: 40vw;
-          image-rendering: pixelated;
-        }
-
-        .arrow-gif {
-          width: 100px;
-          max-width: 15vw;
-          image-rendering: pixelated;
-        }
-
-        .letters-container {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          padding: 10px 10px;
-          max-width: 800px;
-          background-color: rgba(255, 240, 246, 0.7);
-          border-radius: 20px;
-          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
-          font-family: 'Baloo 2', cursive;
-          color: #b4004e;
+        /* Card header */
+        .card-header {
+          background: linear-gradient(135deg, #c2185b 0%, #880e4f 100%);
+          padding: 22px 32px 18px;
           text-align: center;
         }
-
-        .letter-sprite {
-          background-image: url('/images/letterSprite.png');
-          background-size: contain;
-          background-repeat: no-repeat;
-          background-position: center;
-          margin-bottom: 20px;
-          width: 100%;
-          min-height: 400px;
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          image-rendering: pixelated;
-          font-family: 'Shadows Into Light', cursive;
-          font-size: 1.3rem;
-          color: #5c3a2e;
-          text-align: left;
-          white-space: pre-wrap;
-        }
-
-        .letter-text h2 {
-          margin-bottom: 12px;
-          font-size: 1.6rem;
-          color: #a35646;
-        }
-
-        .nav-buttons {
-          display: flex;
-          justify-content: center;
-          gap: 20px;
-          margin-top: 20px;
-        }
-
-        .cute-button {
-          background-color: #c2185b;
-          color: rgb(253, 208, 225);
-          border: none;
-          border-radius: 10px;
-          padding: 10px 22px;
-          cursor: pointer;
-          font-size: 1rem;
+        .card-header-title {
           font-family: 'Baloo 2', cursive;
-          transition: transform 0.2s ease, filter 0.2s ease;
-          margin-bottom: 50px;
+          font-size: clamp(1.1rem, 2.5vw, 1.5rem);
+          font-weight: 700; color: rgba(255,255,255,0.96);
+          letter-spacing: 1px; margin: 0 0 5px;
+        }
+        .letter-counter {
+          font-family: 'Baloo 2', cursive;
+          font-size: 0.8rem; color: rgba(255,218,234,0.8);
+          letter-spacing: 2.5px; text-transform: uppercase;
         }
 
-        .cute-button:hover {
-          transform: scale(1.1);
-          filter: brightness(1.1);
+        /* Dot indicators */
+        .dots-row {
+          display: flex; justify-content: center; gap: 7px;
+          padding: 14px 16px;
+          background: rgba(252, 231, 243, 0.5);
+          border-bottom: 1px solid rgba(212, 168, 83, 0.14);
+          flex-wrap: wrap;
+        }
+        .dot {
+          width: 9px; height: 9px; border-radius: 50%;
+          background: rgba(190, 24, 93, 0.22);
+          transition: background 0.25s, transform 0.25s;
+          cursor: pointer; flex-shrink: 0;
+        }
+        .dot.active { background: #be185d; transform: scale(1.35); }
+        .dot:hover:not(.active) { background: rgba(190, 24, 93, 0.5); }
+
+        /* Letter body */
+        .letter-body {
+          padding: 32px 38px 28px;
+          min-height: 380px;
+          display: flex; flex-direction: column; position: relative;
+          background: rgba(255, 250, 243, 0.6);
+        }
+        .letter-body::before {
+          content: '';
+          position: absolute; inset: 0;
+          background-image: url('/images/letterPaper.png');
+          background-size: cover; background-position: center;
+          opacity: 0.22;
+          pointer-events: none; border-radius: 0;
+        }
+        .letter-salutation {
+          font-family: 'Shadows Into Light', cursive;
+          font-size: clamp(1.05rem, 2vw, 1.3rem);
+          color: #7c3d28; margin: 0 0 14px; font-style: italic;
+        }
+        .letter-text {
+          font-family: 'Shadows Into Light', cursive;
+          font-size: clamp(1.05rem, 2vw, 1.25rem);
+          color: #5c3020; line-height: 1.9;
+          white-space: pre-wrap; margin: 0; flex: 1;
         }
 
-        .gif-hover {
-          transition: transform 0.3s ease;
+        /* Navigation */
+        .letter-nav {
+          display: flex; justify-content: space-between; align-items: center;
+          padding: 16px 28px;
+          background: rgba(252, 231, 243, 0.65);
+          border-top: 1px solid rgba(244, 114, 182, 0.2);
         }
-
-        .music-gif {
-          width: 180px;
-          max-width: 40vw;
-          image-rendering: pixelated;
+        .nav-btn {
+          background: linear-gradient(135deg, #ec4899, #be185d);
+          color: white; border: none; border-radius: 50px;
+          padding: 11px 30px; font-size: 0.95rem;
+          font-family: 'Baloo 2', cursive; font-weight: 600;
+          cursor: pointer;
+          box-shadow: 0 4px 14px rgba(190, 24, 93, 0.32);
+          transition: transform 0.2s, box-shadow 0.2s;
         }
+        .nav-btn:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(190, 24, 93, 0.48);
+        }
+        .nav-btn:active { transform: scale(0.97); }
       `}</style>
 
-      <div className="letters-bg"></div>
+      <div className="letters-pixel-bg" />
 
-      <div className="letters-wrapper" ref={containerRef}>
-        <div className="gif-column">
-          <img src="/images/dancingGif.gif" alt="Dancing GIF" className="dancing-gif" />
-        </div>
+      <div className="letters-page">
+        <div className="letter-card">
 
-        <div className="letters-container">
-          <div className="letter-sprite">
-            <div className="letter-text">
-              <h1>Letters from Yours</h1>
-              <h2>Dear Reese,</h2>
-              {letters[currentLetterIndex]}
-            </div>
+          <div className="card-header">
+            <div className="card-header-title">✉ Letters from Yours</div>
+            <div className="letter-counter">Letter {idx + 1} of {letters.length}</div>
           </div>
-          <div className="nav-buttons">
-            <button className="cute-button" onClick={handlePrevLetter}>Previous</button>
-            <button className="cute-button" onClick={handleNextLetter}>Next</button>
+
+          <div className="dots-row">
+            {letters.map((_, i) => (
+              <div
+                key={i}
+                className={`dot${i === idx ? ' active' : ''}`}
+                onClick={() => goTo(i)}
+              />
+            ))}
           </div>
+
+          <div className="letter-body">
+            <p className="letter-salutation">Dear Reese,</p>
+            <p ref={letterBodyRef} className="letter-text">
+              {letters[idx]}
+            </p>
+          </div>
+
+          <div className="letter-nav">
+            <button className="nav-btn" onClick={prev}>← Prev</button>
+            <button className="nav-btn" onClick={next}>Next →</button>
+          </div>
+
         </div>
-
-        <img src="/images/musicGif.gif" alt="Music GIF" className="music-gif" />
-
-        <FloatingSongs />
       </div>
-    </>
+
+      <FloatingSongs />
+    </div>
   );
 }
