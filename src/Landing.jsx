@@ -176,8 +176,6 @@ export default function Landing() {
 
         /* Message card */
         .message-card {
-          position: absolute; top: 50%; left: 50%;
-          transform: translate(-50%, -50%);
           background: rgba(255, 242, 249, 0.87);
           backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px);
           border: 1.5px solid rgba(244, 114, 182, 0.45);
@@ -188,7 +186,7 @@ export default function Landing() {
             0 2px  8px  rgba(0, 0, 0, 0.07),
             inset 0 1px 0 rgba(255,255,255,0.85);
           display: flex; flex-direction: column; align-items: center; text-align: center;
-          max-width: min(520px, 88vw); width: 100%; z-index: 20;
+          max-width: min(520px, 88vw); width: 100%;
           font-family: 'Baloo 2', cursive;
         }
         .card-title {
@@ -303,8 +301,9 @@ export default function Landing() {
         onClick={() => showToast("Hey! Don't hit the animals 😟 — they practiced all week for this!")}
       />
 
-      {/* Message card */}
-      <div className="message-card">
+      {/* Message card — centered via flex wrapper so GSAP y-animation never conflicts */}
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 20, pointerEvents: 'none' }}>
+      <div className="message-card" style={{ pointerEvents: 'auto', zIndex: 'auto' }}>
         <p className="card-title">
           Happy Birthday, Pretty Girl!! 🎂<br />
           <span style={{ fontSize: '0.88em', color: '#9d174d', fontWeight: 600, letterSpacing: '0.5px' }}>
@@ -326,6 +325,7 @@ export default function Landing() {
         <button id="duh-btn" className="btn-yes" onClick={launchFireworks}>
           Duh!! 🎉
         </button>
+      </div>
       </div>
 
       {/* No button */}
