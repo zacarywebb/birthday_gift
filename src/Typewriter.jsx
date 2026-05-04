@@ -8,8 +8,8 @@ Though I strive for greatness in all aspects of my life... my greatest accomplis
 
 Can you hear the music?`;
 
-const PAUSES  = { '.': 370, ',': 140, ';': 155, '?': 400, '!': 330 };
-const SPEED   = 54; // ms per character base
+const PAUSES  = { '.': 480, ',': 175, ';': 190, '?': 520, '!': 420 };
+const SPEED   = 72; // ms per character base
 
 export default function Typewriter() {
   const [charCount, setCharCount] = useState(0);
@@ -24,8 +24,8 @@ export default function Typewriter() {
     if (exitedRef.current) return;
     exitedRef.current = true;
     setDone(true);
-    setTimeout(() => setFadeOut(true), 2000);
-    setTimeout(() => navigate('/letters'), 3200);
+    setTimeout(() => setFadeOut(true), 5500);
+    setTimeout(() => navigate('/letters'), 6900);
   };
 
   useEffect(() => {
