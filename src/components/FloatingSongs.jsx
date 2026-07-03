@@ -12,8 +12,13 @@ function shuffle(arr) {
   return a;
 }
 
+const coverCacheKey = (song) => `cover:${song.title}—${song.artist}`;
+
 const fetchCover = async (song) => {
   try {
+    const cached = localStorage.getItem(coverCacheKey(song));
+    if (cached) return cached;
+
     const query = encodeURIComponent(`${song.title} ${song.artist}`);
     const r = await fetch(
       `https://itunes.apple.com/search?term=${query}&media=music&entity=musicTrack&limit=8`
@@ -35,8 +40,12 @@ const fetchCover = async (song) => {
     scored.sort((a, b) => b.score - a.score);
 
     const best = scored[0].item;
-    return best.artworkUrl100?.replace('100x100bb.jpg', '600x600bb.jpg')
+    const url = best.artworkUrl100?.replace('100x100bb.jpg', '600x600bb.jpg')
       || '/images/default-cover.jpeg';
+    if (url !== '/images/default-cover.jpeg') {
+      localStorage.setItem(coverCacheKey(song), url);
+    }
+    return url;
   } catch {
     return '/images/default-cover.jpeg';
   }

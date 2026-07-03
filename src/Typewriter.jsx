@@ -48,7 +48,6 @@ export default function Typewriter() {
 
   const displayed   = FULL_TEXT.slice(0, charCount);
   const paragraphs  = displayed.split('\n\n');
-  const isLastPara  = (i) => i === paragraphs.length - 1 && charCount === FULL_TEXT.length;
 
   return (
     <div

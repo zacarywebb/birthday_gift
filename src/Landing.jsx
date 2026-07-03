@@ -333,6 +333,8 @@ export default function Landing() {
         className="btn-no"
         style={{ top: `${noPos.top}px`, left: `${noPos.left}px`, opacity: noPosSet ? 1 : 0 }}
         onMouseEnter={moveNoBtn}
+        onTouchStart={moveNoBtn}
+        onClick={moveNoBtn}
       >
         No, you suck! 😤
       </button>
