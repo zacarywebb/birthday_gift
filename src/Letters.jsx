@@ -159,8 +159,29 @@ export default function Letters() {
           box-shadow: 0 6px 20px rgba(190, 24, 93, 0.48);
         }
         .nav-btn:active { transform: scale(0.97); }
-        .nav-btn.map-link { background: linear-gradient(135deg, #d946ef, #9d174d); }
+
+        /* Map page link — mirrors the Home button, top-right */
+        .map-link-btn {
+          position: fixed; top: 20px; right: 20px;
+          background: rgba(255, 241, 248, 0.88);
+          backdrop-filter: blur(14px);
+          border: 1.5px solid rgba(244, 114, 182, 0.4);
+          border-radius: 50px; padding: 9px 22px;
+          font-family: 'Baloo 2', cursive; font-size: 0.9rem; font-weight: 600;
+          color: #be185d; cursor: pointer;
+          box-shadow: 0 4px 14px rgba(190, 24, 93, 0.15);
+          transition: transform 0.2s, box-shadow 0.2s;
+          z-index: 1000;
+        }
+        .map-link-btn:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 6px 20px rgba(190, 24, 93, 0.28);
+        }
       `}</style>
+
+      <button className="map-link-btn" onClick={() => navigate('/map')}>
+        Our Adventures →
+      </button>
 
       <div className="letters-pixel-bg" />
 
@@ -191,7 +212,6 @@ export default function Letters() {
 
           <div className="letter-nav">
             <button className="nav-btn" onClick={prev}>← Prev</button>
-            <button className="nav-btn map-link" onClick={() => navigate('/map')}>Our Adventures 🗺️</button>
             <button className="nav-btn" onClick={next}>Next →</button>
           </div>
 
