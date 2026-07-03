@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { supabase, MAP_PASSWORD, PHOTO_BUCKET, photoUrl } from './lib/supabase.js';
@@ -23,19 +23,6 @@ function ClickCatcher({ active, onPick }) {
       if (active) onPick(e.latlng);
     },
   });
-  return null;
-}
-
-// Fit the map to all pins once, after the first load
-function FitToPins({ pins }) {
-  const map = useMap();
-  const fitted = useRef(false);
-  useEffect(() => {
-    if (fitted.current || !pins.length) return;
-    fitted.current = true;
-    const bounds = L.latLngBounds(pins.map(p => [p.lat, p.lng]));
-    map.fitBounds(bounds.pad(0.25), { maxZoom: 10 });
-  }, [pins, map]);
   return null;
 }
 
@@ -419,7 +406,6 @@ export default function MapPage() {
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
           />
           <ClickCatcher active={adding} onPick={(latlng) => { setAdding(false); setDraftPos(latlng); }} />
-          <FitToPins pins={pins} />
           {pins.map((pin) => (
             <Marker
               key={pin.id}
