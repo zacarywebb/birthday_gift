@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Tooltip, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { supabase, MAP_PASSWORD, PHOTO_BUCKET, photoUrl } from './lib/supabase.js';
@@ -273,6 +273,16 @@ export default function MapPage() {
         }
         .pin-marker:hover .pin-emoji { transform: scale(1.2); }
 
+        .pin-tooltip {
+          background: rgba(255, 241, 248, 0.96);
+          border: 1.5px solid rgba(244, 114, 182, 0.45);
+          border-radius: 50px; padding: 6px 16px;
+          font-family: 'Baloo 2', cursive; font-size: 0.85rem; font-weight: 700;
+          color: #9d174d;
+          box-shadow: 0 4px 14px rgba(190, 24, 93, 0.22);
+        }
+        .pin-tooltip::before { display: none; }
+
         .map-chip {
           position: fixed;
           background: rgba(255, 241, 248, 0.92);
@@ -520,7 +530,11 @@ export default function MapPage() {
                 click: () => setSelectedId(pin.id),
                 dragend: (e) => onPinDragEnd(pin, e),
               }}
-            />
+            >
+              <Tooltip className="pin-tooltip" direction="top" offset={[0, -34]}>
+                {pin.title}
+              </Tooltip>
+            </Marker>
           ))}
           {draftPos && <Marker position={draftPos} icon={iconFor(owner)} />}
         </MapContainer>
