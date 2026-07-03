@@ -14,8 +14,15 @@ const makeIcon = (emoji) => L.divIcon({
   iconSize: [40, 40],
   iconAnchor: [20, 36],
 });
-const visitedIcon = makeIcon('💖');
-const futureIcon  = makeIcon('✈️');
+const ICONS = {
+  both:  makeIcon('💖'),
+  zac:   makeIcon('🧑🏽'),
+  reese: makeIcon('👩🏻'),
+};
+const iconFor = (owner) => ICONS[owner] || ICONS.both;
+
+const ownerEmoji = (p) => p.owner === 'zac' ? '🧑🏽' : p.owner === 'reese' ? '👩🏻' : '💖';
+const ownerLabel = (p) => p.owner === 'zac' ? "Zac's adventure" : p.owner === 'reese' ? "Reese's adventure" : '';
 
 function ClickCatcher({ active, onPick }) {
   useMapEvents({
@@ -54,9 +61,15 @@ export default function MapPage() {
 
   // New-pin form
   const [title, setTitle] = useState('');
+  const [owner, setOwner] = useState('both');
   const [files, setFiles] = useState([]);
   const [dropHover, setDropHover] = useState(false);
   const [cardDropHover, setCardDropHover] = useState(false);
+
+  // Editing existing pins
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [titleDraft, setTitleDraft] = useState('');
+  const [markerNonce, setMarkerNonce] = useState(0); // bumped to snap dragged pins back
 
   const addPhotosInputRef = useRef(null);
   const newPinInputRef    = useRef(null);
@@ -83,6 +96,9 @@ export default function MapPage() {
     if (supabase) loadPins();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Leaving a pin or switching pins closes any in-progress title edit
+  useEffect(() => { setEditingTitle(false); }, [selectedId]);
+
   // Run an action only once the password has been entered
   const withPassword = (action) => {
     if (unlocked || !MAP_PASSWORD) { action(); return; }
@@ -90,6 +106,12 @@ export default function MapPage() {
     setPwInput('');
     setPwError(false);
     setAskPw(true);
+  };
+
+  const cancelPassword = () => {
+    setAskPw(false);
+    pendingRef.current = null;
+    setMarkerNonce(n => n + 1); // snap any dragged-but-unsaved pin back to its saved spot
   };
 
   const submitPassword = (e) => {
@@ -121,20 +143,58 @@ export default function MapPage() {
     }
   };
 
+  const onPinDragEnd = (pin, e) => {
+    const { lat, lng } = e.target.getLatLng();
+    withPassword(async () => {
+      setPins(ps => ps.map(p => p.id === pin.id ? { ...p, lat, lng } : p));
+      const { error } = await supabase.from('pins').update({ lat, lng }).eq('id', pin.id);
+      if (error) { showToast("Couldn't move that pin 😢"); loadPins(); }
+      else showToast('Pin moved! 📍');
+    });
+  };
+
+  const saveTitle = async (e) => {
+    e.preventDefault();
+    const t = titleDraft.trim();
+    if (!t || !selected) return;
+    setEditingTitle(false);
+    if (t === selected.title) return;
+    setPins(ps => ps.map(p => p.id === selected.id ? { ...p, title: t } : p));
+    const { error } = await supabase.from('pins').update({ title: t }).eq('id', selected.id);
+    if (error) { showToast("Couldn't save the new title 😢"); loadPins(); }
+  };
+
+  const deletePhoto = (ph) => withPassword(async () => {
+    if (!window.confirm('Delete this photo?')) return;
+    try {
+      await supabase.storage.from(PHOTO_BUCKET).remove([ph.storage_path]);
+      const { error } = await supabase.from('pin_photos').delete().eq('id', ph.id);
+      if (error) throw error;
+      setPins(ps => ps.map(p => p.id === ph.pin_id
+        ? { ...p, pin_photos: p.pin_photos.filter(x => x.id !== ph.id) }
+        : p));
+    } catch {
+      showToast("Couldn't delete that photo 😢");
+      loadPins();
+    }
+  });
+
   const savePin = async (e) => {
     e.preventDefault();
     if (!title.trim() || saving) return;
     setSaving(true);
     try {
-      const { data: pin, error } = await supabase.from('pins').insert({
-        title: title.trim(),
-        lat: draftPos.lat,
-        lng: draftPos.lng,
-      }).select().single();
+      const row = { title: title.trim(), lat: draftPos.lat, lng: draftPos.lng };
+      let { data: pin, error } = await supabase.from('pins').insert({ ...row, owner }).select().single();
+      if (error) {
+        // owner column may not exist yet (migration not run) — save without it
+        ({ data: pin, error } = await supabase.from('pins').insert(row).select().single());
+      }
       if (error) throw error;
       if (files.length) await uploadPhotos(pin.id, files);
       setDraftPos(null);
       setTitle('');
+      setOwner('both');
       setFiles([]);
       await loadPins();
       setSelectedId(pin.id);
@@ -296,6 +356,26 @@ export default function MapPage() {
         }
         .pin-card-title { font-size: 1.15rem; font-weight: 700; color: #9d174d; margin: 0; padding-right: 30px; }
         .pin-card-date  { font-size: 0.8rem; color: #be185d; opacity: 0.75; margin-top: 2px; }
+        .edit-btn {
+          background: none; border: none; cursor: pointer;
+          font-size: 0.82rem; margin-left: 6px; opacity: 0.5;
+          transition: opacity 0.15s;
+        }
+        .edit-btn:hover { opacity: 1; }
+        .title-edit-row { display: flex; gap: 8px; padding-right: 30px; }
+        .title-edit-input {
+          flex: 1; min-width: 0;
+          border: 1.5px solid rgba(244, 114, 182, 0.5); border-radius: 10px;
+          padding: 6px 10px; font-family: 'Baloo 2', cursive;
+          font-size: 1rem; font-weight: 700; color: #7c2d4e;
+          background: white; outline: none;
+        }
+        .title-edit-input:focus { border-color: #ec4899; }
+        .title-edit-save {
+          border: none; border-radius: 10px; width: 36px; flex-shrink: 0;
+          background: linear-gradient(135deg, #ec4899, #be185d);
+          color: white; cursor: pointer; font-size: 0.95rem;
+        }
         .pin-card-close {
           position: absolute; top: 14px; right: 14px;
           background: none; border: none; cursor: pointer;
@@ -310,6 +390,16 @@ export default function MapPage() {
         .photo-grid {
           display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px;
         }
+        .photo-cell { position: relative; }
+        .photo-del {
+          position: absolute; top: 4px; right: 4px;
+          width: 22px; height: 22px; border-radius: 50%;
+          border: none; background: rgba(30, 8, 20, 0.55); color: white;
+          font-size: 0.68rem; cursor: pointer;
+          display: flex; align-items: center; justify-content: center;
+          opacity: 0.85; transition: background 0.15s, opacity 0.15s;
+        }
+        .photo-del:hover { background: #be185d; opacity: 1; }
         .photo-grid img {
           width: 100%; aspect-ratio: 1; object-fit: cover;
           border-radius: 10px; cursor: pointer;
@@ -364,6 +454,20 @@ export default function MapPage() {
           background: white; outline: none;
         }
         .modal input:focus { border-color: #ec4899; }
+        .owner-row { display: flex; gap: 8px; }
+        .owner-opt {
+          flex: 1; border: 1.5px solid rgba(244, 114, 182, 0.4);
+          border-radius: 50px; background: white; padding: 9px 4px;
+          font-family: 'Baloo 2', cursive; font-size: 0.82rem; font-weight: 600;
+          color: #be185d; cursor: pointer; white-space: nowrap;
+          transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+        }
+        .owner-opt:hover { background: rgba(252, 231, 243, 0.8); }
+        .owner-opt.sel {
+          background: linear-gradient(135deg, #ec4899, #be185d);
+          color: white; border-color: transparent;
+          box-shadow: 0 3px 10px rgba(190, 24, 93, 0.32);
+        }
         .dropzone {
           border: 2px dashed rgba(236, 72, 153, 0.5);
           border-radius: 14px; padding: 22px 16px;
@@ -408,13 +512,17 @@ export default function MapPage() {
           <ClickCatcher active={adding} onPick={(latlng) => { setAdding(false); setDraftPos(latlng); }} />
           {pins.map((pin) => (
             <Marker
-              key={pin.id}
+              key={`${pin.id}-${markerNonce}`}
               position={[pin.lat, pin.lng]}
-              icon={pin.is_future ? futureIcon : visitedIcon}
-              eventHandlers={{ click: () => setSelectedId(pin.id) }}
+              icon={iconFor(pin.owner)}
+              draggable
+              eventHandlers={{
+                click: () => setSelectedId(pin.id),
+                dragend: (e) => onPinDragEnd(pin, e),
+              }}
             />
           ))}
-          {draftPos && <Marker position={draftPos} icon={visitedIcon} />}
+          {draftPos && <Marker position={draftPos} icon={iconFor(owner)} />}
         </MapContainer>
       </div>
 
@@ -443,11 +551,25 @@ export default function MapPage() {
           }}
         >
           <div className="pin-card-head">
-            <p className="pin-card-title">{selected.is_future ? '✈️ ' : '💖 '}{selected.title}</p>
+            {editingTitle ? (
+              <form className="title-edit-row" onSubmit={saveTitle}>
+                <input
+                  className="title-edit-input" autoFocus
+                  value={titleDraft} onChange={(e) => setTitleDraft(e.target.value)}
+                />
+                <button type="submit" className="title-edit-save" title="Save title">✓</button>
+              </form>
+            ) : (
+              <p className="pin-card-title">
+                {ownerEmoji(selected)} {selected.title}
+                <button
+                  className="edit-btn" title="Edit title"
+                  onClick={() => withPassword(() => { setTitleDraft(selected.title); setEditingTitle(true); })}
+                >✏️</button>
+              </p>
+            )}
             <div className="pin-card-date">
-              {selected.is_future
-                ? (selected.visit_date ? `Planned — ${fmtDate(selected.visit_date)}` : 'Someday soon…')
-                : (fmtDate(selected.visit_date) || '')}
+              {[ownerLabel(selected), fmtDate(selected.visit_date)].filter(Boolean).join(' · ')}
             </div>
             <button className="pin-card-close" onClick={() => setSelectedId(null)}>✕</button>
           </div>
@@ -456,13 +578,15 @@ export default function MapPage() {
             {selected.pin_photos?.length ? (
               <div className="photo-grid">
                 {selected.pin_photos.map((ph) => (
-                  <img
-                    key={ph.id}
-                    src={photoUrl(ph.storage_path)}
-                    alt={selected.title}
-                    loading="lazy"
-                    onClick={() => setLightbox(photoUrl(ph.storage_path))}
-                  />
+                  <div key={ph.id} className="photo-cell">
+                    <img
+                      src={photoUrl(ph.storage_path)}
+                      alt={selected.title}
+                      loading="lazy"
+                      onClick={() => setLightbox(photoUrl(ph.storage_path))}
+                    />
+                    <button className="photo-del" title="Delete photo" onClick={() => deletePhoto(ph)}>✕</button>
+                  </div>
                 ))}
               </div>
             ) : (
@@ -479,8 +603,16 @@ export default function MapPage() {
               className="card-btn"
               disabled={saving}
               onClick={() => withPassword(() => addPhotosInputRef.current?.click())}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => {
+                e.preventDefault();
+                e.stopPropagation(); // card-level drop handler would double-upload
+                setCardDropHover(false);
+                const imgs = imageFiles(e.dataTransfer.files);
+                if (imgs.length) withPassword(() => addPhotosToPin(imgs));
+              }}
             >
-              {saving ? 'Uploading…' : '+ Add photos'}
+              {saving ? 'Uploading…' : '+ Add photos (tap or drop)'}
             </button>
             <button className="card-btn subtle" disabled={saving} onClick={deletePin} title="Remove pin">🗑</button>
           </div>
@@ -489,7 +621,7 @@ export default function MapPage() {
 
       {/* Password modal */}
       {askPw && (
-        <div className="modal-scrim" onClick={() => setAskPw(false)}>
+        <div className="modal-scrim" onClick={cancelPassword}>
           <form className="modal" onClick={(e) => e.stopPropagation()} onSubmit={submitPassword}>
             <h3>What's the magic word? 🔐</h3>
             <input
@@ -498,7 +630,7 @@ export default function MapPage() {
             />
             {pwError && <p className="pw-error">Hmm, that's not it… 🤔</p>}
             <div className="modal-actions">
-              <button type="button" className="card-btn subtle" style={{ flex: 1 }} onClick={() => setAskPw(false)}>Cancel</button>
+              <button type="button" className="card-btn subtle" style={{ flex: 1 }} onClick={cancelPassword}>Cancel</button>
               <button type="submit" className="card-btn">Unlock</button>
             </div>
           </form>
@@ -512,9 +644,21 @@ export default function MapPage() {
             <h3>New memory 📍</h3>
             <label>Where / what was it?</label>
             <input
-              type="text" autoFocus placeholder="e.g. Weekend in Charleston"
+              type="text" autoFocus
               value={title} onChange={(e) => setTitle(e.target.value)}
             />
+            <label>Whose trip?</label>
+            <div className="owner-row">
+              {[['both', '💖 Both of us'], ['zac', '🧑🏽 Zac'], ['reese', '👩🏻 Reese']].map(([val, lab]) => (
+                <button
+                  type="button" key={val}
+                  className={`owner-opt${owner === val ? ' sel' : ''}`}
+                  onClick={() => setOwner(val)}
+                >
+                  {lab}
+                </button>
+              ))}
+            </div>
             <label>Photos</label>
             <input
               ref={newPinInputRef}

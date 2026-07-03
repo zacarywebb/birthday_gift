@@ -8,9 +8,13 @@ create table pins (
   description text,
   visit_date  date,
   is_future   boolean not null default false,
+  owner       text not null default 'both', -- 'both' | 'zac' | 'reese'
   lat         double precision not null,
   lng         double precision not null
 );
+
+-- Migration for projects created before the owner column existed:
+-- alter table pins add column if not exists owner text not null default 'both';
 
 -- Photos attached to a pin (files live in the pin-photos storage bucket)
 create table pin_photos (
