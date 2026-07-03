@@ -159,27 +159,8 @@ export default function Letters() {
           box-shadow: 0 6px 20px rgba(190, 24, 93, 0.48);
         }
         .nav-btn:active { transform: scale(0.97); }
-
-        /* Map page link */
-        .map-link-btn {
-          position: fixed; top: 20px; right: 20px;
-          background: linear-gradient(135deg, #ec4899, #be185d);
-          border: none; border-radius: 50px; padding: 10px 24px;
-          font-family: 'Baloo 2', cursive; font-size: 0.9rem; font-weight: 600;
-          color: white; cursor: pointer;
-          box-shadow: 0 4px 16px rgba(190, 24, 93, 0.35);
-          transition: transform 0.2s, box-shadow 0.2s;
-          z-index: 1000;
-        }
-        .map-link-btn:hover {
-          transform: translateY(-1px);
-          box-shadow: 0 6px 22px rgba(190, 24, 93, 0.5);
-        }
+        .nav-btn.map-link { background: linear-gradient(135deg, #d946ef, #9d174d); }
       `}</style>
-
-      <button className="map-link-btn" onClick={() => navigate('/map')}>
-        Our Adventures 🗺️ →
-      </button>
 
       <div className="letters-pixel-bg" />
 
@@ -210,6 +191,7 @@ export default function Letters() {
 
           <div className="letter-nav">
             <button className="nav-btn" onClick={prev}>← Prev</button>
+            <button className="nav-btn map-link" onClick={() => navigate('/map')}>Our Adventures 🗺️</button>
             <button className="nav-btn" onClick={next}>Next →</button>
           </div>
 

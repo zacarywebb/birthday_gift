@@ -66,10 +66,15 @@ export default function MapPage() {
   const pendingRef = useRef(null);
 
   // New-pin form
-  const [form, setForm] = useState({ title: '', description: '', date: '', isFuture: false });
+  const [title, setTitle] = useState('');
   const [files, setFiles] = useState([]);
+  const [dropHover, setDropHover] = useState(false);
+  const [cardDropHover, setCardDropHover] = useState(false);
 
   const addPhotosInputRef = useRef(null);
+  const newPinInputRef    = useRef(null);
+
+  const imageFiles = (list) => [...list].filter(f => f.type.startsWith('image/'));
 
   const selected = pins.find(p => p.id === selectedId) || null;
 
@@ -131,21 +136,18 @@ export default function MapPage() {
 
   const savePin = async (e) => {
     e.preventDefault();
-    if (!form.title.trim() || saving) return;
+    if (!title.trim() || saving) return;
     setSaving(true);
     try {
       const { data: pin, error } = await supabase.from('pins').insert({
-        title: form.title.trim(),
-        description: form.description.trim() || null,
-        visit_date: form.date || null,
-        is_future: form.isFuture,
+        title: title.trim(),
         lat: draftPos.lat,
         lng: draftPos.lng,
       }).select().single();
       if (error) throw error;
       if (files.length) await uploadPhotos(pin.id, files);
       setDraftPos(null);
-      setForm({ title: '', description: '', date: '', isFuture: false });
+      setTitle('');
       setFiles([]);
       await loadPins();
       setSelectedId(pin.id);
@@ -296,6 +298,10 @@ export default function MapPage() {
             max-height: 62vh; border-radius: 22px 22px 0 0;
           }
         }
+        .pin-card.drop-hover {
+          border-color: #ec4899;
+          box-shadow: 0 12px 44px rgba(190, 24, 93, 0.4), inset 0 0 0 2px rgba(236, 72, 153, 0.55);
+        }
         .pin-card-head {
           padding: 18px 22px 12px;
           border-bottom: 1px solid rgba(244, 114, 182, 0.2);
@@ -363,36 +369,36 @@ export default function MapPage() {
           display: block; font-size: 0.8rem; font-weight: 700;
           color: #be185d; margin: 12px 0 4px; letter-spacing: 0.4px;
         }
-        .modal input[type="text"], .modal input[type="password"],
-        .modal input[type="date"], .modal textarea {
+        .modal input[type="text"], .modal input[type="password"] {
           width: 100%; box-sizing: border-box;
           border: 1.5px solid rgba(244, 114, 182, 0.4);
           border-radius: 13px; padding: 10px 14px;
           font-family: 'Baloo 2', cursive; font-size: 0.95rem; color: #7c2d4e;
           background: white; outline: none;
         }
-        .modal input:focus, .modal textarea:focus { border-color: #ec4899; }
-        .modal textarea { resize: vertical; min-height: 84px; }
-        .modal input[type="file"] {
-          width: 100%; font-family: 'Baloo 2', cursive; font-size: 0.82rem; color: #9d174d;
+        .modal input:focus { border-color: #ec4899; }
+        .dropzone {
+          border: 2px dashed rgba(236, 72, 153, 0.5);
+          border-radius: 14px; padding: 22px 16px;
+          text-align: center; cursor: pointer;
+          font-size: 0.88rem; font-weight: 600; color: #be185d;
+          background: rgba(252, 231, 243, 0.35);
+          transition: background 0.2s, border-color 0.2s, transform 0.15s;
         }
-        .modal input[type="file"]::file-selector-button {
-          border: none; border-radius: 50px; padding: 8px 18px;
-          font-family: 'Baloo 2', cursive; font-size: 0.82rem; font-weight: 600;
-          background: rgba(190, 24, 93, 0.12); color: #be185d;
-          cursor: pointer; margin-right: 10px;
+        .dropzone:hover, .dropzone.over {
+          background: rgba(252, 231, 243, 0.85);
+          border-color: #ec4899;
         }
-        .modal input[type="file"]::file-selector-button:hover {
-          background: rgba(190, 24, 93, 0.2);
+        .dropzone.over { transform: scale(1.02); }
+        .clear-files {
+          background: none; border: none; cursor: pointer;
+          font-family: 'Baloo 2', cursive; font-size: 0.78rem; font-weight: 600;
+          color: #be185d; opacity: 0.65; text-decoration: underline;
+          margin-top: 6px; padding: 0;
         }
-        .check-row {
-          display: flex; align-items: center; gap: 9px; margin-top: 14px;
-          font-size: 0.9rem; color: #9d174d; font-weight: 600; cursor: pointer;
-        }
-        .check-row input { width: 17px; height: 17px; accent-color: #ec4899; cursor: pointer; }
+        .clear-files:hover { opacity: 1; }
         .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
         .pw-error { color: #dc2662; font-size: 0.82rem; margin: 8px 0 0; font-weight: 600; }
-        .file-note { font-size: 0.78rem; color: #be185d; opacity: 0.7; margin-top: 5px; }
 
         /* Lightbox */
         .lightbox {
@@ -439,7 +445,17 @@ export default function MapPage() {
 
       {/* Pin detail card */}
       {selected && (
-        <div className="pin-card">
+        <div
+          className={`pin-card${cardDropHover ? ' drop-hover' : ''}`}
+          onDragOver={(e) => { e.preventDefault(); setCardDropHover(true); }}
+          onDragLeave={() => setCardDropHover(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setCardDropHover(false);
+            const imgs = imageFiles(e.dataTransfer.files);
+            if (imgs.length) withPassword(() => addPhotosToPin(imgs));
+          }}
+        >
           <div className="pin-card-head">
             <p className="pin-card-title">{selected.is_future ? '✈️ ' : '💖 '}{selected.title}</p>
             <div className="pin-card-date">
@@ -464,7 +480,7 @@ export default function MapPage() {
                 ))}
               </div>
             ) : (
-              <p className="pin-card-desc" style={{ opacity: 0.55 }}>No photos here yet 📷</p>
+              <p className="pin-card-desc" style={{ opacity: 0.55 }}>No photos here yet 📷 — tap below, or drag some straight onto this card</p>
             )}
           </div>
           <div className="pin-card-actions">
@@ -511,34 +527,35 @@ export default function MapPage() {
             <label>Where / what was it?</label>
             <input
               type="text" autoFocus placeholder="e.g. Weekend in Charleston"
-              value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })}
+              value={title} onChange={(e) => setTitle(e.target.value)}
             />
-            <label>A little note (optional)</label>
-            <textarea
-              placeholder="What made this one special?"
-              value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })}
-            />
-            <label>When?</label>
-            <input
-              type="date"
-              value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })}
-            />
-            <label className="check-row" style={{ display: 'flex' }}>
-              <input
-                type="checkbox"
-                checked={form.isFuture} onChange={(e) => setForm({ ...form, isFuture: e.target.checked })}
-              />
-              <span>A future trip ✈️ — somewhere we're going!</span>
-            </label>
             <label>Photos</label>
             <input
-              type="file" accept="image/*" multiple
-              onChange={(e) => setFiles([...e.target.files])}
+              ref={newPinInputRef}
+              type="file" accept="image/*" multiple hidden
+              onChange={(e) => { setFiles(prev => [...prev, ...imageFiles(e.target.files)]); e.target.value = ''; }}
             />
-            {files.length > 0 && <div className="file-note">{files.length} photo{files.length > 1 ? 's' : ''} selected</div>}
+            <div
+              className={`dropzone${dropHover ? ' over' : ''}`}
+              onClick={() => newPinInputRef.current?.click()}
+              onDragOver={(e) => { e.preventDefault(); setDropHover(true); }}
+              onDragLeave={() => setDropHover(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDropHover(false);
+                setFiles(prev => [...prev, ...imageFiles(e.dataTransfer.files)]);
+              }}
+            >
+              {files.length
+                ? `${files.length} photo${files.length > 1 ? 's' : ''} ready 💕 — tap or drop to add more`
+                : 'Tap to pick photos, or drag them here 📸'}
+            </div>
+            {files.length > 0 && (
+              <button type="button" className="clear-files" onClick={() => setFiles([])}>clear photos</button>
+            )}
             <div className="modal-actions">
-              <button type="button" className="card-btn subtle" style={{ flex: 1 }} disabled={saving} onClick={() => setDraftPos(null)}>Cancel</button>
-              <button type="submit" className="card-btn" disabled={saving || !form.title.trim()}>
+              <button type="button" className="card-btn subtle" style={{ flex: 1 }} disabled={saving} onClick={() => { setDraftPos(null); setFiles([]); }}>Cancel</button>
+              <button type="submit" className="card-btn" disabled={saving || !title.trim()}>
                 {saving ? 'Saving…' : 'Pin it! 💕'}
               </button>
             </div>
