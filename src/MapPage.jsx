@@ -143,13 +143,18 @@ export default function MapPage() {
     }
   };
 
+  // .select() so we can tell when RLS silently blocks the update (0 rows returned)
+  const updatePin = async (id, fields) => {
+    const { data, error } = await supabase.from('pins').update(fields).eq('id', id).select();
+    return !error && data?.length > 0;
+  };
+
   const onPinDragEnd = (pin, e) => {
     const { lat, lng } = e.target.getLatLng();
     withPassword(async () => {
       setPins(ps => ps.map(p => p.id === pin.id ? { ...p, lat, lng } : p));
-      const { error } = await supabase.from('pins').update({ lat, lng }).eq('id', pin.id);
-      if (error) { showToast("Couldn't move that pin 😢"); loadPins(); }
-      else showToast('Pin moved! 📍');
+      if (await updatePin(pin.id, { lat, lng })) showToast('Pin moved! 📍');
+      else { showToast("Couldn't move that pin 😢"); loadPins(); }
     });
   };
 
@@ -160,8 +165,10 @@ export default function MapPage() {
     setEditingTitle(false);
     if (t === selected.title) return;
     setPins(ps => ps.map(p => p.id === selected.id ? { ...p, title: t } : p));
-    const { error } = await supabase.from('pins').update({ title: t }).eq('id', selected.id);
-    if (error) { showToast("Couldn't save the new title 😢"); loadPins(); }
+    if (!(await updatePin(selected.id, { title: t }))) {
+      showToast("Couldn't save the new title 😢");
+      loadPins();
+    }
   };
 
   const deletePhoto = (ph) => withPassword(async () => {
@@ -304,16 +311,28 @@ export default function MapPage() {
           color: white; border-color: transparent;
           box-shadow: 0 5px 18px rgba(190, 24, 93, 0.38);
         }
+        .chip-back { top: 16px; left: 16px; }
+        .chip-add  { bottom: calc(20px + env(safe-area-inset-bottom)); right: 16px; }
 
         .map-title {
-          position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+          position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
           background: rgba(255, 241, 248, 0.92);
-          backdrop-filter: blur(14px);
+          backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
           border: 1.5px solid rgba(244, 114, 182, 0.4);
           border-radius: 50px; padding: 9px 26px;
           font-size: 1rem; font-weight: 700; color: #9d174d;
           box-shadow: 0 4px 14px rgba(190, 24, 93, 0.15);
           z-index: 1000; white-space: nowrap;
+        }
+        @media (max-width: 640px) {
+          /* Narrow screens: back chip left, title right — no overlap */
+          .map-chip { font-size: 0.82rem; padding: 8px 15px; }
+          .chip-back { top: 12px; left: 10px; }
+          .chip-add  { right: 12px; }
+          .map-title {
+            top: 12px; left: auto; right: 10px; transform: none;
+            font-size: 0.85rem; padding: 8px 16px;
+          }
         }
 
         .adding-banner {
@@ -324,6 +343,13 @@ export default function MapPage() {
           box-shadow: 0 4px 22px rgba(190, 24, 93, 0.25);
           border: 1px solid rgba(244, 114, 182, 0.4);
           z-index: 1000; white-space: nowrap;
+        }
+        @media (max-width: 640px) {
+          .adding-banner {
+            top: 62px; white-space: normal; text-align: center;
+            width: max-content; max-width: calc(100vw - 32px);
+            border-radius: 20px;
+          }
         }
 
         .toast {
@@ -352,7 +378,9 @@ export default function MapPage() {
         @media (max-width: 640px) {
           .pin-card {
             top: auto; right: 0; left: 0; bottom: 0; width: 100%;
-            max-height: 62vh; border-radius: 22px 22px 0 0;
+            max-height: 62dvh; border-radius: 22px 22px 0 0;
+            border-left: none; border-right: none; border-bottom: none;
+            padding-bottom: env(safe-area-inset-bottom);
           }
         }
         .pin-card.drop-hover {
@@ -449,7 +477,10 @@ export default function MapPage() {
           border-radius: 24px; padding: 26px 28px;
           width: min(420px, 100%);
           box-shadow: 0 16px 56px rgba(120, 10, 50, 0.35);
-          max-height: 88vh; overflow-y: auto;
+          max-height: 85dvh; overflow-y: auto;
+        }
+        @media (max-width: 640px) {
+          .modal { padding: 20px 18px; }
         }
         .modal h3 { margin: 0 0 16px; color: #9d174d; font-size: 1.15rem; }
         .modal label {
@@ -460,7 +491,8 @@ export default function MapPage() {
           width: 100%; box-sizing: border-box;
           border: 1.5px solid rgba(244, 114, 182, 0.4);
           border-radius: 13px; padding: 10px 14px;
-          font-family: 'Baloo 2', cursive; font-size: 0.95rem; color: #7c2d4e;
+          /* 16px minimum — smaller fonts make iOS zoom the page on focus */
+          font-family: 'Baloo 2', cursive; font-size: 1rem; color: #7c2d4e;
           background: white; outline: none;
         }
         .modal input:focus { border-color: #ec4899; }
@@ -541,11 +573,11 @@ export default function MapPage() {
       </div>
 
       <div className="map-title">Our Adventures 🗺️💕</div>
-      <button className="map-chip" style={{ top: 20, left: 20 }} onClick={() => navigate('/letters')}>← Letters</button>
+      <button className="map-chip chip-back" onClick={() => navigate('/letters')}>← Letters</button>
       {adding ? (
-        <button className="map-chip" style={{ bottom: 24, right: 20 }} onClick={() => setAdding(false)}>Cancel</button>
+        <button className="map-chip chip-add" onClick={() => setAdding(false)}>Cancel</button>
       ) : (
-        <button className="map-chip primary" style={{ bottom: 24, right: 20 }} onClick={startAdding}>+ Add a pin</button>
+        <button className="map-chip primary chip-add" onClick={startAdding}>+ Add a pin</button>
       )}
 
       {adding && <div className="adding-banner">Tap the map where this memory belongs 💫</div>}

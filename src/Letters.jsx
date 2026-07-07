@@ -2,7 +2,7 @@ import { useRef, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { letters } from "./constants/letters.js";
 import { gsap } from "gsap";
-import FloatingSongs from "./components/FloatingSongs.jsx";
+import MusicPlayer from "./components/MusicPlayer.jsx";
 
 export default function Letters() {
   const [idx, setIdx]       = useState(0);
@@ -59,7 +59,11 @@ export default function Letters() {
 
         .letters-page {
           display: flex; justify-content: center; align-items: center;
-          min-height: 100vh; padding: 80px 20px 140px;
+          min-height: 100vh; min-height: 100dvh;
+          padding: 76px 20px calc(110px + env(safe-area-inset-bottom));
+        }
+        @media (max-width: 640px) {
+          .letters-page { padding: 68px 12px calc(100px + env(safe-area-inset-bottom)); }
         }
 
         /* Card */
@@ -118,6 +122,9 @@ export default function Letters() {
           display: flex; flex-direction: column; position: relative;
           background: rgba(255, 250, 243, 0.6);
         }
+        @media (max-width: 640px) {
+          .letter-body { padding: 22px 20px 20px; min-height: 300px; }
+        }
         .letter-body::before {
           content: '';
           position: absolute; inset: 0;
@@ -159,27 +166,39 @@ export default function Letters() {
           box-shadow: 0 6px 20px rgba(190, 24, 93, 0.48);
         }
         .nav-btn:active { transform: scale(0.97); }
+        @media (max-width: 640px) {
+          .letter-nav { padding: 12px 16px; }
+          .nav-btn { padding: 10px 22px; font-size: 0.88rem; }
+        }
 
-        /* Map page link — mirrors the Home button, top-right */
-        .map-link-btn {
-          position: fixed; top: 20px; right: 20px;
+        /* Fixed corner buttons — Home top-left, map link top-right */
+        .corner-btn {
+          position: fixed; top: 16px;
           background: rgba(255, 241, 248, 0.88);
-          backdrop-filter: blur(14px);
+          backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
           border: 1.5px solid rgba(244, 114, 182, 0.4);
-          border-radius: 50px; padding: 9px 22px;
+          border-radius: 50px; padding: 9px 20px;
           font-family: 'Baloo 2', cursive; font-size: 0.9rem; font-weight: 600;
           color: #be185d; cursor: pointer;
           box-shadow: 0 4px 14px rgba(190, 24, 93, 0.15);
           transition: transform 0.2s, box-shadow 0.2s;
           z-index: 1000;
         }
-        .map-link-btn:hover {
+        .corner-btn:hover {
           transform: translateY(-1px);
           box-shadow: 0 6px 20px rgba(190, 24, 93, 0.28);
         }
+        .corner-btn.left  { left: 16px; }
+        .corner-btn.right { right: 16px; }
+        @media (max-width: 640px) {
+          .corner-btn { font-size: 0.82rem; padding: 8px 15px; top: 12px; }
+          .corner-btn.left  { left: 10px; }
+          .corner-btn.right { right: 10px; }
+        }
       `}</style>
 
-      <button className="map-link-btn" onClick={() => navigate('/map')}>
+      <button className="corner-btn left" onClick={() => navigate('/')}>← Home</button>
+      <button className="corner-btn right" onClick={() => navigate('/map')}>
         Our Adventures →
       </button>
 
@@ -218,7 +237,7 @@ export default function Letters() {
         </div>
       </div>
 
-      <FloatingSongs />
+      <MusicPlayer />
     </div>
   );
 }

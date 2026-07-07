@@ -7,35 +7,22 @@ const FLOATERS = [
 ];
 
 export default function Landing() {
-  const [noPos, setNoPos]     = useState({ top: 0, left: 0 });
-  const [noPosSet, setNoPosSet] = useState(false);
+  // The No button lives inline next to Duh!! until first touched,
+  // then escapes into fixed positioning and dodges around the screen
+  const [noEscaped, setNoEscaped] = useState(false);
+  const [noPos, setNoPos]         = useState({ top: 0, left: 0 });
   const [toast, setToast]     = useState(null);
   const containerRef           = useRef(null);
   const canvasRef              = useRef(null);
   const animRef                = useRef(null);
   const navigate               = useNavigate();
 
-  // Position No-button beside Duh!! button — measured synchronously
-  // before GSAP's useEffect runs (effects fire in declaration order)
-  const positionNoBtn = () => {
-    const duhBtn = document.getElementById('duh-btn');
-    if (!duhBtn) return;
-    const b = duhBtn.getBoundingClientRect();
-    setNoPos({ top: b.top, left: b.right + 16 });
-    setNoPosSet(true);
-  };
-
-  useEffect(() => {
-    window.addEventListener('resize', positionNoBtn);
-    return () => window.removeEventListener('resize', positionNoBtn);
-  }, []);
-
   // GSAP entrance
   useEffect(() => {
     const ctx = gsap.context(() => {
       gsap.fromTo('.message-card',
         { y: 50, opacity: 0 },
-        { y: 0, opacity: 1, duration: 1.05, ease: 'power3.out', delay: 0.15, onComplete: positionNoBtn }
+        { y: 0, opacity: 1, duration: 1.05, ease: 'power3.out', delay: 0.15 }
       );
       gsap.fromTo('.ground-sprite',
         { y: 44, opacity: 0, scale: 0.82 },
@@ -46,10 +33,12 @@ export default function Landing() {
   }, []);
 
   const moveNoBtn = () => {
+    // Clamped so the button always stays fully tappable on screen
     setNoPos({
-      top:  Math.random() * (window.innerHeight - 52),
-      left: Math.random() * (window.innerWidth  - 160),
+      top:  12 + Math.random() * Math.max(0, window.innerHeight - 76),
+      left: 12 + Math.random() * Math.max(0, window.innerWidth - 174),
     });
+    setNoEscaped(true);
   };
 
   const showToast = (msg) => {
@@ -164,7 +153,7 @@ export default function Landing() {
         }
         .charli-wrap:hover { animation-play-state: paused; }
         .charli-wrap img {
-          width: min(280px, 17vw);
+          width: clamp(110px, 17vw, 280px);
           image-rendering: pixelated; cursor: pointer;
         }
         .charli-wrap img:hover { filter: brightness(1.12) drop-shadow(0 0 4px rgba(255,160,200,0.5)); }
@@ -201,12 +190,17 @@ export default function Landing() {
         }
         .puppy-gif:hover { transform: scale(1.07); }
 
+        .btn-row {
+          display: flex; flex-wrap: wrap; gap: 12px;
+          justify-content: center; align-items: center;
+          margin-top: 20px;
+        }
         .btn-yes {
           background: linear-gradient(135deg, #ec4899, #be185d);
           color: white; border: none; border-radius: 50px;
           padding: 13px 36px; font-size: 1.05rem;
           font-family: 'Baloo 2', cursive; font-weight: 700;
-          cursor: pointer; margin-top: 20px;
+          cursor: pointer;
           box-shadow: 0 5px 18px rgba(190, 24, 93, 0.38);
           transition: transform 0.2s, box-shadow 0.2s;
           letter-spacing: 0.3px;
@@ -217,9 +211,8 @@ export default function Landing() {
         }
         .btn-yes:active { transform: scale(0.97); }
 
-        /* No button */
+        /* No button — inline until it escapes, then fixed and dodging */
         .btn-no {
-          position: fixed;
           background: linear-gradient(135deg, #f9a8d4, #ec4899);
           color: white; border: none; border-radius: 50px;
           padding: 11px 26px; font-size: 0.95rem;
@@ -227,8 +220,10 @@ export default function Landing() {
           cursor: pointer; z-index: 999;
           box-shadow: 0 4px 14px rgba(236, 72, 153, 0.35);
           transition: top 0.22s ease, left 0.22s ease;
-          user-select: none;
+          user-select: none; -webkit-user-select: none;
+          touch-action: manipulation;
         }
+        .btn-no.escaped { position: fixed; }
 
         /* Toast */
         .toast {
@@ -281,23 +276,23 @@ export default function Landing() {
 
       {/* Ground animals */}
       <img src="/images/greyBunny.png"   alt="grey bunny"   className="animal ground-sprite"
-        style={{ bottom: '8%', left: '23%', width: 'min(155px, 10vw)' }}
+        style={{ bottom: '8%', left: '23%', width: 'clamp(58px, 10vw, 155px)' }}
         onClick={() => showToast("Hey! Don't hit the animals 😟 — they practiced all week for this!")}
       />
       <img src="/images/fatCat.png"      alt="fat cat"      className="animal ground-sprite"
-        style={{ bottom: '2%', left: '32%', width: 'min(200px, 13vw)' }}
+        style={{ bottom: '2%', left: '32%', width: 'clamp(74px, 13vw, 200px)' }}
         onClick={() => showToast("Hey! Don't hit the animals 😟 — they practiced all week for this!")}
       />
       <img src="/images/whiteBunny.png"  alt="white bunny"  className="animal ground-sprite"
-        style={{ bottom: '8%', left: '44%', width: 'min(138px, 9vw)' }}
+        style={{ bottom: '8%', left: '44%', width: 'clamp(52px, 9vw, 138px)' }}
         onClick={() => showToast("Hey! Don't hit the animals 😟 — they practiced all week for this!")}
       />
       <img src="/images/birthdayDog.png" alt="birthday dog" className="animal ground-sprite"
-        style={{ bottom: '2%', left: '50%', width: 'min(200px, 13vw)' }}
+        style={{ bottom: '2%', left: '50%', width: 'clamp(74px, 13vw, 200px)' }}
         onClick={() => showToast("Hey! Don't hit the animals 😟 — they practiced all week for this!")}
       />
       <img src="/images/pig.png"         alt="pig"          className="animal ground-sprite"
-        style={{ bottom: '7%', left: '66%', width: 'min(200px, 13vw)' }}
+        style={{ bottom: '7%', left: '66%', width: 'clamp(74px, 13vw, 200px)' }}
         onClick={() => showToast("Hey! Don't hit the animals 😟 — they practiced all week for this!")}
       />
 
@@ -322,22 +317,22 @@ export default function Landing() {
           className="puppy-gif"
           onClick={() => showToast("Look, it's us!! 🐶💕")}
         />
-        <button id="duh-btn" className="btn-yes" onClick={launchFireworks}>
-          Duh!! 🎉
-        </button>
+        <div className="btn-row">
+          <button className="btn-yes" onClick={launchFireworks}>
+            Duh!! 🎉
+          </button>
+          <button
+            className={`btn-no${noEscaped ? ' escaped' : ''}`}
+            style={noEscaped ? { top: `${noPos.top}px`, left: `${noPos.left}px` } : undefined}
+            onMouseEnter={moveNoBtn}
+            onTouchStart={(e) => { e.preventDefault(); moveNoBtn(); }}
+            onClick={moveNoBtn}
+          >
+            No, you suck! 😤
+          </button>
+        </div>
       </div>
       </div>
-
-      {/* No button */}
-      <button
-        className="btn-no"
-        style={{ top: `${noPos.top}px`, left: `${noPos.left}px`, opacity: noPosSet ? 1 : 0 }}
-        onMouseEnter={moveNoBtn}
-        onTouchStart={moveNoBtn}
-        onClick={moveNoBtn}
-      >
-        No, you suck! 😤
-      </button>
     </div>
   );
 }

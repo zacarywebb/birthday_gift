@@ -16,6 +16,10 @@ create table pins (
 -- Migration for projects created before the owner column existed:
 -- alter table pins add column if not exists owner text not null default 'both';
 
+-- Migration for projects set up before the update policy existed (without it,
+-- renaming or dragging a pin silently saves nothing — RLS blocks the update):
+-- create policy "anyone can update pins" on pins for update using (true) with check (true);
+
 -- Photos attached to a pin (files live in the pin-photos storage bucket)
 create table pin_photos (
   id           uuid primary key default gen_random_uuid(),
@@ -31,6 +35,7 @@ alter table pin_photos enable row level security;
 
 create policy "anyone can read pins"    on pins       for select using (true);
 create policy "anyone can add pins"     on pins       for insert with check (true);
+create policy "anyone can update pins"  on pins       for update using (true) with check (true);
 create policy "anyone can delete pins"  on pins       for delete using (true);
 create policy "anyone can read photos"  on pin_photos for select using (true);
 create policy "anyone can add photos"   on pin_photos for insert with check (true);
