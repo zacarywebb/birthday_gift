@@ -32,11 +32,18 @@ export default function Landing() {
     return () => ctx.revert();
   }, []);
 
-  const moveNoBtn = () => {
-    // Clamped so the button always stays fully tappable on screen
+  const moveNoBtn = (e) => {
+    // Clamp to the *visual* viewport (innerHeight overshoots past the
+    // mobile browser bar) using the button's real measured size
+    const btn = e?.currentTarget;
+    const w  = btn?.offsetWidth  || 170;
+    const h  = btn?.offsetHeight || 48;
+    const vv = window.visualViewport;
+    const vw = vv?.width  ?? window.innerWidth;
+    const vh = vv?.height ?? window.innerHeight;
     setNoPos({
-      top:  12 + Math.random() * Math.max(0, window.innerHeight - 76),
-      left: 12 + Math.random() * Math.max(0, window.innerWidth - 174),
+      top:  (vv?.offsetTop  ?? 0) + 12 + Math.random() * Math.max(0, vh - h - 24),
+      left: (vv?.offsetLeft ?? 0) + 12 + Math.random() * Math.max(0, vw - w - 24),
     });
     setNoEscaped(true);
   };
@@ -325,7 +332,7 @@ export default function Landing() {
             className={`btn-no${noEscaped ? ' escaped' : ''}`}
             style={noEscaped ? { top: `${noPos.top}px`, left: `${noPos.left}px` } : undefined}
             onMouseEnter={moveNoBtn}
-            onTouchStart={(e) => { e.preventDefault(); moveNoBtn(); }}
+            onTouchStart={(e) => { e.preventDefault(); moveNoBtn(e); }}
             onClick={moveNoBtn}
           >
             No, you suck! 😤
